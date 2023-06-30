@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 )
 
 // Обработчик главной страницы.
@@ -16,7 +18,13 @@ func home(w http.ResponseWriter, r *http.Request) {
 
 // Обработчик для отображения содержимого заметки.
 func showNote(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Отображение заметки..."))
+	id, err := strconv.Atoi(r.URL.Query().Get("id"))
+	if err != nil || id < 1 {
+		http.NotFound(w, r)
+		return
+	}
+
+	fmt.Fprintf(w, "Отображение выбранной заметки с ID %d...", id)
 }
 
 // Обработчик для создания новой заметки.
