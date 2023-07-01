@@ -1,0 +1,23 @@
+{{define "base"}}
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta charset='utf-8'>
+    <title>{{template "title" .}} - GoNotes</title>
+</head>
+<body>
+<header>
+    <h1>
+        <a href='/'>GoNotes</a>
+    </h1>
+</header>
+<nav>
+    <a href='/'>Домашняя страница</a>
+</nav>
+<main>
+    {{template "main" .}}
+</main>
+{{template "footer" .}}
+</body>
+</html>
+{{end}}
