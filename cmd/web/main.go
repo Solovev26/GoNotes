@@ -1,11 +1,15 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"net/http"
 )
 
 func main() {
+
+	addr := flag.String("addr", ":4000", "Сетевой адрес HTTP")
+	flag.Parse()
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", home)
@@ -14,8 +18,7 @@ func main() {
 
 	fileServer := http.FileServer(http.Dir("./ui/static/"))
 	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
-
-	log.Println("Запуск веб-сервера на http://127.0.0.1:4000")
-	err := http.ListenAndServe(":4000", mux)
+	log.Printf("Запуск сервера на %s", *addr)
+	err := http.ListenAndServe(*addr, mux)
 	log.Fatal(err)
 }
