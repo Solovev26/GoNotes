@@ -4,6 +4,7 @@ import (
 	"awesomeProject/pkg/models"
 	"errors"
 	"fmt"
+	"html/template"
 	"net/http"
 	"strconv"
 )
@@ -21,26 +22,24 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	for _, note := range s {
-		fmt.Fprintf(w, "%v\n", note)
+	data := &templateData{Notes: s}
+
+	files := []string{
+		"./ui/html/home.page.html",
+		"./ui/html/base.layout.html",
+		"./ui/html/footer.partial.html",
 	}
 
-	// files := []string{
-	//     "./ui/html/home.page.tmpl",
-	//     "./ui/html/base.layout.tmpl",
-	//     "./ui/html/footer.partial.tmpl",
-	// }
+	ts, err := template.ParseFiles(files...)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
 
-	// ts, err := template.ParseFiles(files...)
-	// if err != nil {
-	//     app.serverError(w, err)
-	//     return
-	// }
-
-	// err = ts.Execute(w, nil)
-	// if err != nil {
-	//     app.serverError(w, err)
-	// }
+	err = ts.Execute(w, data)
+	if err != nil {
+		app.serverError(w, err)
+	}
 }
 
 // Обработчик для отображения содержимого заметки.
@@ -61,8 +60,24 @@ func (app *application) showNote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Отображаем весь вывод на странице.
-	fmt.Fprintf(w, "%v", s)
+	data := &templateData{Note: s}
+
+	files := []string{
+		"./ui/html/show.page.html",
+		"./ui/html/base.layout.html",
+		"./ui/html/footer.partial.html",
+	}
+
+	ts, err := template.ParseFiles(files...)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	err = ts.Execute(w, data)
+	if err != nil {
+		app.serverError(w, err)
+	}
 }
 
 // Обработчик для создания новой заметки.
