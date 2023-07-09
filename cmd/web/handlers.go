@@ -1,8 +1,9 @@
 package main
 
 import (
+	"awesomeProject/pkg/models"
+	"errors"
 	"fmt"
-	"html/template"
 	"net/http"
 	"strconv"
 )
@@ -14,22 +15,32 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	files := []string{
-		"./ui/html/home.page.html",
-		"./ui/html/base.layout.html",
-		"./ui/html/footer.partial.html",
-	}
-
-	ts, err := template.ParseFiles(files...)
+	s, err := app.notes.Latest()
 	if err != nil {
 		app.serverError(w, err)
 		return
 	}
 
-	err = ts.Execute(w, nil)
-	if err != nil {
-		app.serverError(w, err)
+	for _, note := range s {
+		fmt.Fprintf(w, "%v\n", note)
 	}
+
+	// files := []string{
+	//     "./ui/html/home.page.tmpl",
+	//     "./ui/html/base.layout.tmpl",
+	//     "./ui/html/footer.partial.tmpl",
+	// }
+
+	// ts, err := template.ParseFiles(files...)
+	// if err != nil {
+	//     app.serverError(w, err)
+	//     return
+	// }
+
+	// err = ts.Execute(w, nil)
+	// if err != nil {
+	//     app.serverError(w, err)
+	// }
 }
 
 // Обработчик для отображения содержимого заметки.
@@ -40,17 +51,41 @@ func (app *application) showNote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Fprintf(w, "Отображение выбранной заметки с ID %d...", id)
+	s, err := app.notes.Get(id)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.notFound(w)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
+
+	// Отображаем весь вывод на странице.
+	fmt.Fprintf(w, "%v", s)
 }
 
 // Обработчик для создания новой заметки.
 func (app *application) createNote(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.Header().Set("Allow", http.MethodPost)
-
 		app.clientError(w, http.StatusMethodNotAllowed)
 		return
 	}
 
-	w.Write([]byte("Форма для создания новой заметки..."))
+	// Создаем несколько переменных, содержащих тестовые данные. Мы удалим их позже.
+	title := "История про улитку"
+	content := "Улитка выползла из раковины,\nвытянула рожки,\nи опять подобрала их."
+	expires := "7"
+
+	// Передаем данные в метод SnippetModel.Insert(), получая обратно
+	// ID только что созданной записи в базу данных.
+	id, err := app.notes.Insert(title, content, expires)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	// Перенаправляем пользователя на соответствующую страницу заметки.
+	http.Redirect(w, r, fmt.Sprintf("/snippet?id=%d", id), http.StatusSeeOther)
 }
