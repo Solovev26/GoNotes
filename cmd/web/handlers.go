@@ -80,27 +80,49 @@ func (app *application) showNote(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Обработчик для создания новой заметки.
-func (app *application) createNote(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		w.Header().Set("Allow", http.MethodPost)
-		app.clientError(w, http.StatusMethodNotAllowed)
+func (app *application) createPage(w http.ResponseWriter, r *http.Request) {
+
+	err := r.ParseForm()
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
 		return
 	}
 
-	// Создаем несколько переменных, содержащих тестовые данные. Мы удалим их позже.
-	title := "История про улитку"
-	content := "Улитка выползла из раковины,\nвытянула рожки,\nи опять подобрала их."
-	expires := "7"
+	files := []string{
+		"./ui/html/create.page.html",
+		"./ui/html/base.layout.html",
+		"./ui/html/footer.partial.html",
+	}
 
-	// Передаем данные в метод SnippetModel.Insert(), получая обратно
-	// ID только что созданной записи в базу данных.
-	id, err := app.notes.Insert(title, content, expires)
+	ts, err := template.ParseFiles(files...)
 	if err != nil {
 		app.serverError(w, err)
 		return
 	}
 
-	// Перенаправляем пользователя на соответствующую страницу заметки.
-	http.Redirect(w, r, fmt.Sprintf("/snippet?id=%d", id), http.StatusSeeOther)
+	err = ts.Execute(w, nil)
+	if err != nil {
+		app.serverError(w, err)
+	}
+	if r.FormValue("title") != "" && r.FormValue("content") != "" && r.FormValue("expire") != "" {
+		if r.Method != http.MethodPost {
+			w.Header().Set("Allow", http.MethodPost)
+			app.clientError(w, http.StatusMethodNotAllowed)
+			return
+		}
+
+		title := r.FormValue("title")
+		content := r.FormValue("content")
+		expires := r.FormValue("expire")
+
+		id, err := app.notes.Insert(title, content, expires)
+		if err != nil {
+			app.serverError(w, err)
+			return
+		}
+
+		// Перенаправляем пользователя на соответствующую страницу заметки.
+		http.Redirect(w, r, fmt.Sprintf("/note?id=%d", id), http.StatusSeeOther)
+	}
+	return
 }
