@@ -80,37 +80,35 @@ func (app *application) showNote(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (app *application) createPage(w http.ResponseWriter, r *http.Request) {
-
-	err := r.ParseForm()
-	if err != nil {
-		app.clientError(w, http.StatusBadRequest)
-		return
-	}
-
-	files := []string{
-		"./ui/html/create.page.html",
-		"./ui/html/base.layout.html",
-		"./ui/html/footer.partial.html",
-	}
-
-	ts, err := template.ParseFiles(files...)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-
-	err = ts.Execute(w, nil)
-	if err != nil {
-		app.serverError(w, err)
-	}
-	if r.FormValue("title") != "" && r.FormValue("content") != "" && r.FormValue("expire") != "" {
-		if r.Method != http.MethodPost {
-			w.Header().Set("Allow", http.MethodPost)
-			app.clientError(w, http.StatusMethodNotAllowed)
+// Обработчик для создания заметки.
+func (app *application) createNote(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		err := r.ParseForm()
+		if err != nil {
+			app.clientError(w, http.StatusBadRequest)
 			return
 		}
 
+		files := []string{
+			"./ui/html/create.page.html",
+			"./ui/html/base.layout.html",
+			"./ui/html/footer.partial.html",
+		}
+
+		ts, err := template.ParseFiles(files...)
+		if err != nil {
+			app.serverError(w, err)
+			return
+		}
+
+		err = ts.Execute(w, nil)
+		if err != nil {
+			app.serverError(w, err)
+		}
+		return
+	}
+
+	if r.Method == http.MethodPost {
 		title := r.FormValue("title")
 		content := r.FormValue("content")
 		expires := r.FormValue("expire")
@@ -124,5 +122,6 @@ func (app *application) createPage(w http.ResponseWriter, r *http.Request) {
 		// Перенаправляем пользователя на соответствующую страницу заметки.
 		http.Redirect(w, r, fmt.Sprintf("/note?id=%d", id), http.StatusSeeOther)
 	}
+
 	return
 }
